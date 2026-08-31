@@ -3,6 +3,27 @@
 Running log of decisions/constraints an agent (or future you) needs
 before touching this codebase. Newest first.
 
+## 2026-08-31 — Frontend dev-server vulnerabilities in esbuild/vite: accepted, not fixed
+`npm audit` flags esbuild <=0.24.2 (moderate/high/critical chain into
+vite/vitest) — the dev server accepts cross-origin requests. **Why not
+fixed:** the fix is a breaking major-version jump to Vite 8, and this is
+a localhost-only personal MVP, never exposed to an untrusted network.
+**How to apply:** revisit before ever exposing the dev server beyond
+localhost (e.g. `--host`, tunneling, deployment) — don't carry this
+acceptance into a public-facing setup without re-evaluating.
+
+## 2026-08-31 — Implementer subagents can report DONE on work that doesn't actually run
+The first UI-overhaul implementer created all component files correctly
+but never installed Tailwind or wired the Vite plugin — the built CSS
+was 0.06kB (empty) despite a "DONE" report and a passing `npm run build`
+(Vite doesn't error just because Tailwind generated nothing). **Why this
+matters:** build success and test pass are necessary but not sufficient
+— always spot-check actual output artifacts (bundle sizes, rendered
+content) before trusting a subagent's self-report, especially for
+multi-step environment/tooling setup tasks. **How to apply:** for any
+future build-tooling change, check `dist/assets/*.css` (or equivalent)
+size and content directly, don't just check the build exited 0.
+
 ## 2026-08-31 — Local dev environment: Postgres 16 via Homebrew, Python 3.11
 System `python3` is 3.9.6 (too old — project needs >=3.11); use
 `/opt/homebrew/bin/python3.11` for the backend venv. Postgres 16 runs via

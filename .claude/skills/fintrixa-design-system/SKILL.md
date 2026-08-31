@@ -10,6 +10,29 @@ green-red trading-app cliché. One deliberate exception: Buy/Hold/Avoid
 signal colors (see below) — documented in `docs/DECISIONS.md`, flag to
 the user if this should be removed in favor of strict 3-color purity.
 
+## Implementation: Tailwind CSS v4, not inline styles
+
+Tokens below live in `frontend/src/styles/globals.css` as a Tailwind v4
+`@theme` block (`--color-lavender-500` etc.), which auto-generates
+utility classes (`bg-lavender-500`, `text-lavender-700`, ...). Use those
+utility classes on components — never hand-roll inline `style={{...}}`
+objects or hardcoded hex values. Shared primitives live in
+`frontend/src/components/ui/` (Table, Badge, Card, Skeleton, Alert),
+styled with `class-variance-authority` for variants and the `cn()`
+helper (`frontend/src/lib/utils.ts`) for merging classes — this is a
+shadcn/ui-style copy-paste component approach, not a runtime UI library
+dependency. Build new components out of these primitives instead of
+raw `<div>`/`<table>` elements with inline styles.
+
+**Known gotcha:** after `npm install`, verify the Tailwind build
+actually produced real CSS output before considering a UI task done —
+`npm run build` and check `dist/assets/*.css` is more than a few hundred
+bytes (a near-empty CSS file means the `@tailwindcss/vite` plugin isn't
+wired into `vite.config.ts`, or `globals.css` isn't imported through
+`main.tsx`). This has silently broken once already; don't trust that
+"the build succeeded" means styles actually rendered — Vite won't error
+just because Tailwind generated nothing.
+
 ## Color tokens
 
 ```css
