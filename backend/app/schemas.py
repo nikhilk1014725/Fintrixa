@@ -1,0 +1,23 @@
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class StockSummary(BaseModel):
+    ticker: str
+    name: str
+    long_term_label: str | None
+    short_term_label: str | None
+    long_term_score: float | None
+    short_term_score: float | None
+    computed_at: datetime | None
+    excluded_reason: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class StockDetail(StockSummary):
+    fundamental_score: float | None
+    technical_score: float | None
+    explanation: str | None
