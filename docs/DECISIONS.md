@@ -3,6 +3,26 @@
 Running log of decisions/constraints an agent (or future you) needs
 before touching this codebase. Newest first.
 
+## 2026-08-31 — Local dev environment: Postgres 16 via Homebrew, Python 3.11
+System `python3` is 3.9.6 (too old — project needs >=3.11); use
+`/opt/homebrew/bin/python3.11` for the backend venv. Postgres 16 runs via
+`brew services start postgresql@16`, with a `fintrixa`/`fintrixa` db/user
+already created locally matching `settings.database_url`. **Why:**
+neither was present on the machine when the walking skeleton was built.
+**How to apply:** if Postgres isn't running (`pg_isready` fails), run
+`brew services start postgresql@16` before touching the backend.
+
+## 2026-08-31 — Walking skeleton confirms yfinance fundamentals are thin, even for large-caps
+Running the seed script live against RELIANCE.NS (India's largest
+company by market cap) returned no `sector_pe` and no `return_on_equity`
+from yfinance — the fundamental score was correctly excluded rather than
+guessed. **Why this matters:** validates the "no silent zero-score" rule
+end-to-end against real data, and confirms the ingestion-breadth plan's
+screener.in fallback isn't optional polish — without it, most/all stocks
+will show `excluded_reason` for the long-term verdict. **How to apply:**
+prioritize `sector_pe` and `return_on_equity` in the screener.in fallback
+first — those are the two fields that just failed on a blue-chip.
+
 ## 2026-08-31 — Signal-color exception to the lavender/white/black palette
 Buy/Hold/Avoid verdict badges use green/red accent colors, everything
 else stays lavender/white/black. **Why:** a layman needs to recognize
