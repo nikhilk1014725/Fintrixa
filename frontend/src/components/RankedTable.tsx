@@ -1,3 +1,4 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { VerdictBadge } from "./VerdictBadge";
 import type { StockSummary } from "../api/client";
 
@@ -5,37 +6,37 @@ export type { StockSummary } from "../api/client";
 
 export function RankedTable({ stocks }: { stocks: StockSummary[] }) {
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-      <thead>
-        <tr style={{ background: "var(--lavender-100)", textAlign: "left" }}>
-          <th style={{ padding: "8px 12px" }}>Ticker</th>
-          <th style={{ padding: "8px 12px" }}>Name</th>
-          <th style={{ padding: "8px 12px" }}>Long-Term</th>
-          <th style={{ padding: "8px 12px" }}>Short-Term</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Ticker</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Long-Term</TableHead>
+          <TableHead>Short-Term</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {stocks.map((stock) => (
-          <tr key={stock.ticker} style={{ borderBottom: "1px solid var(--border)" }}>
-            <td style={{ padding: "8px 12px" }}>{stock.ticker}</td>
-            <td style={{ padding: "8px 12px" }}>{stock.name}</td>
-            <td style={{ padding: "8px 12px" }}>
+          <TableRow key={stock.ticker}>
+            <TableCell className="font-mono font-medium">{stock.ticker}</TableCell>
+            <TableCell className="text-ink-600 dark:text-lavender-100">{stock.name}</TableCell>
+            <TableCell>
               {stock.long_term_label ? (
                 <VerdictBadge label={stock.long_term_label} />
               ) : (
-                <span style={{ color: "var(--ink-400)" }}>{stock.excluded_reason}</span>
+                <span className="text-xs text-ink-400">{stock.excluded_reason}</span>
               )}
-            </td>
-            <td style={{ padding: "8px 12px" }}>
+            </TableCell>
+            <TableCell>
               {stock.short_term_label ? (
                 <VerdictBadge label={stock.short_term_label} />
               ) : (
-                <span style={{ color: "var(--ink-400)" }}>{stock.excluded_reason}</span>
+                <span className="text-xs text-ink-400">{stock.excluded_reason}</span>
               )}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }
