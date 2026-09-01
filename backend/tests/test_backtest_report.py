@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -71,3 +72,49 @@ def test_run_backtest_produces_well_formed_report_with_enough_history(db_session
     assert "top_quartile_pass_rate" in report
     assert "bottom_quartile_pass_rate" in report
     assert len(report["windows"]) >= 8
+
+
+def _fake_window_result(top_beats_median, bottom_at_or_below_median):
+    """Returns a minimal valid window result dict for mocking evaluate_window."""
+    return {
+        "usable": True,
+        "n_participants": 4,
+        "quartile_size": 1,
+        "median_return": 0.0,
+        "top_quartile_mean": 0.01,
+        "bottom_quartile_mean": -0.01,
+        "top_beats_median": top_beats_median,
+        "bottom_at_or_below_median": bottom_at_or_below_median,
+    }
+
+
+def test_run_backtest_passes_when_both_conditions_met_every_window(db_session):
+    n_days = 200 + 8 * 63 + 63 + 10
+    for i, ticker in enumerate(["AAA.NS", "BBB.NS", "CCC.NS", "DDD.NS"]):
+        _seed_stock_with_history(db_session, ticker, n_days=n_days, seed=i)
+
+    with patch(
+        "app.backtest.report.evaluate_window",
+        return_value=_fake_window_result(top_beats_median=True, bottom_at_or_below_median=True),
+    ):
+        report = run_backtest(db_session, horizon_trading_days=21, horizon_label="T+1mo")
+
+    assert report["status"] == "pass"
+    assert report["top_quartile_pass_rate"] == 1.0
+    assert report["bottom_quartile_pass_rate"] == 1.0
+
+
+def test_run_backtest_fails_when_bottom_condition_never_met(db_session):
+    n_days = 200 + 8 * 63 + 63 + 10
+    for i, ticker in enumerate(["AAA.NS", "BBB.NS", "CCC.NS", "DDD.NS"]):
+        _seed_stock_with_history(db_session, ticker, n_days=n_days, seed=i)
+
+    with patch(
+        "app.backtest.report.evaluate_window",
+        return_value=_fake_window_result(top_beats_median=True, bottom_at_or_below_median=False),
+    ):
+        report = run_backtest(db_session, horizon_trading_days=21, horizon_label="T+1mo")
+
+    assert report["status"] == "fail"
+    assert report["top_quartile_pass_rate"] == 1.0
+    assert report["bottom_quartile_pass_rate"] == 0.0
