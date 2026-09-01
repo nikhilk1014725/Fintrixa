@@ -9,7 +9,9 @@ def evaluate_window(scored_returns: list[tuple[float, float]]) -> dict:
     stock that had enough history/forward-room to participate in this
     window. Requires at least 4 participants (so each quartile has >=1
     stock) -- fewer than that, the window is flagged unusable rather than
-    computing a meaningless stat on too few points."""
+    computing a meaningless stat on too few points. Ties at the quartile
+    boundary are resolved by Python's stable sort using input order, since
+    the function has no stock-identity information available."""
     n = len(scored_returns)
     if n < 4:
         return {"usable": False, "reason": f"only {n} stocks had data this window, need >=4"}
@@ -28,6 +30,7 @@ def evaluate_window(scored_returns: list[tuple[float, float]]) -> dict:
     return {
         "usable": True,
         "n_participants": n,
+        "quartile_size": quartile_size,
         "median_return": median_return,
         "top_quartile_mean": top_mean,
         "bottom_quartile_mean": bottom_mean,

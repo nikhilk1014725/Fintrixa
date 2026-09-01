@@ -31,3 +31,11 @@ def test_evaluate_window_too_few_participants_marked_unusable():
 
     assert result["usable"] is False
     assert "3" in result["reason"]
+
+
+def test_evaluate_window_includes_quartile_size():
+    scored_returns = [(float(i), float(i) / 1000) for i in range(0, 100, 5)]  # 20 points
+
+    result = evaluate_window(scored_returns)
+
+    assert result["quartile_size"] == 20 // 4
