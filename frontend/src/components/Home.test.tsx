@@ -44,3 +44,21 @@ test("shows an empty state when no stock has a verdict", () => {
     screen.getByText("No strong opportunities right now. Check back after the next scoring run.")
   ).toBeInTheDocument();
 });
+
+test("ranks scored stocks by long-term score, highest first", () => {
+  const higher: StockSummary = {
+    ticker: "INFY.NS",
+    name: "Infosys",
+    long_term_label: "Strong Buy",
+    short_term_label: "Buy",
+    long_term_score: 91.2,
+    short_term_score: 70.0,
+    computed_at: "2026-09-01T18:00:00Z",
+    excluded_reason: null,
+  };
+
+  render(<Home stocks={[scored, higher]} onSelectTicker={vi.fn()} />);
+
+  const tickers = screen.getAllByText(/\.NS$/).map((el) => el.textContent);
+  expect(tickers.indexOf("INFY.NS")).toBeLessThan(tickers.indexOf("TCS.NS"));
+});

@@ -9,12 +9,11 @@ export function Home({
   onSelectTicker: (ticker: string) => void;
 }) {
   const ranked = stocks
-    .filter((stock) => stock.long_term_label !== null || stock.short_term_label !== null)
-    .sort(
-      (a, b) =>
-        (b.long_term_score ?? b.short_term_score ?? 0) -
-        (a.long_term_score ?? a.short_term_score ?? 0)
-    );
+    .filter(
+      (stock): stock is StockSummary & { long_term_score: number } =>
+        stock.long_term_label !== null && stock.long_term_score !== null
+    )
+    .sort((a, b) => b.long_term_score - a.long_term_score);
 
   return (
     <div>
