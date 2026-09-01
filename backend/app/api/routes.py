@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Score, Stock
-from app.schemas import StockDetail, StockSummary
+from app.models import DailyPrice, Score, Stock
+from app.schemas import PriceHistoryPoint, StockDetail, StockSummary
 
 router = APIRouter()
 
@@ -60,3 +60,17 @@ def stock_detail(ticker: str, db: Session = Depends(get_db)):
         explanation=score.explanation if score else None,
         excluded_reason=score.excluded_reason if score else "not yet scored",
     )
+
+
+@router.get("/stocks/{ticker}/history", response_model=list[PriceHistoryPoint])
+def stock_history(ticker: str, db: Session = Depends(get_db)):
+    stock = db.execute(select(Stock).where(Stock.ticker == ticker)).scalar_one_or_none()
+    if stock is None:
+        raise HTTPException(status_code=404, detail=f"unknown ticker: {ticker}")
+
+    stmt = (
+        select(DailyPrice)
+        .where(DailyPrice.stock_id == stock.id)
+        .order_by(DailyPrice.trade_date.asc())
+    )
+    return db.execute(stmt).scalars().all()

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -20,3 +20,14 @@ class StockDetail(StockSummary):
     fundamental_score: float | None
     technical_score: float | None
     explanation: str | None
+
+
+class PriceHistoryPoint(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    trade_date: date
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float

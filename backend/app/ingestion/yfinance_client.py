@@ -1,5 +1,9 @@
+from datetime import date
+
 import pandas as pd
 import yfinance as yf
+
+from app.models import DailyPrice
 
 
 def fetch_price_history(ticker: str, period: str = "2y") -> pd.DataFrame:
@@ -33,8 +37,9 @@ def fetch_fundamentals(ticker: str) -> dict:
     rest so callers never mistake missing for zero."""
     info = yf.Ticker(ticker).info
     return {
+        "sector": info.get("sector"),  # GICS-style sector string, used for peer-group sector_pe
         "trailing_pe": info.get("trailingPE"),
-        "sector_pe": None,  # not available from yfinance; breadth plan adds sector-avg calc
+        "sector_pe": None,  # filled in by enrich_sector_pe() across the fetched universe
         "return_on_equity": info.get("returnOnEquity"),
         "return_on_capital_employed": None,  # not exposed by yfinance
         "debt_to_equity": info.get("debtToEquity"),
@@ -45,3 +50,41 @@ def fetch_fundamentals(ticker: str) -> dict:
         "auditor_changed_recently": None,
         "negative_equity": None,
     }
+
+
+def persist_price_history(db, stock_id: int, rows: list[dict]) -> int:
+    """Upsert normalized price rows (from `normalize_price_history`) into
+    the `daily_prices` table, keyed on (stock_id, trade_date). Skips rows
+    whose (stock_id, trade_date) already exist so re-running ingestion for
+    an overlapping date range never produces duplicate rows. Does not
+    commit — caller controls the transaction. Returns the number of rows
+    actually inserted."""
+    if not rows:
+        return 0
+
+    existing_dates = {
+        d
+        for (d,) in db.query(DailyPrice.trade_date)
+        .filter(DailyPrice.stock_id == stock_id)
+        .all()
+    }
+
+    inserted = 0
+    for row in rows:
+        trade_date = date.fromisoformat(row["trade_date"])
+        if trade_date in existing_dates:
+            continue
+        db.add(
+            DailyPrice(
+                stock_id=stock_id,
+                trade_date=trade_date,
+                open=row["open"],
+                high=row["high"],
+                low=row["low"],
+                close=row["close"],
+                volume=row["volume"],
+            )
+        )
+        existing_dates.add(trade_date)
+        inserted += 1
+    return inserted

@@ -9,12 +9,43 @@ export interface StockSummary {
   excluded_reason: string | null;
 }
 
+export interface StockDetail extends StockSummary {
+  fundamental_score: number | null;
+  technical_score: number | null;
+  explanation: string | null;
+}
+
+export interface PriceHistoryPoint {
+  trade_date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
 const API_BASE = "http://localhost:8000";
 
 export async function fetchStocks(): Promise<StockSummary[]> {
   const response = await fetch(`${API_BASE}/stocks`);
   if (!response.ok) {
     throw new Error(`failed to fetch stocks: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function fetchStockDetail(ticker: string): Promise<StockDetail> {
+  const response = await fetch(`${API_BASE}/stocks/${ticker}`);
+  if (!response.ok) {
+    throw new Error(`failed to fetch stock detail: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function fetchStockHistory(ticker: string): Promise<PriceHistoryPoint[]> {
+  const response = await fetch(`${API_BASE}/stocks/${ticker}/history`);
+  if (!response.ok) {
+    throw new Error(`failed to fetch stock history: ${response.status}`);
   }
   return response.json();
 }

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.api.main import app
 from app.db import Base, get_db
-from app.models import Score, Stock
+from app.models import DailyPrice, Score, Stock
 
 
 @pytest.fixture()
@@ -38,6 +38,28 @@ def client():
             short_term_label="Buy",
             explanation="Long-term: buy on fundamentals (82/100)...",
             excluded_reason=None,
+        )
+    )
+    db.add(
+        DailyPrice(
+            stock_id=stock.id,
+            trade_date=date(2026, 8, 28),
+            open=2900.0,
+            high=2920.0,
+            low=2890.0,
+            close=2910.0,
+            volume=1000000.0,
+        )
+    )
+    db.add(
+        DailyPrice(
+            stock_id=stock.id,
+            trade_date=date(2026, 8, 27),
+            open=2880.0,
+            high=2905.0,
+            low=2870.0,
+            close=2895.0,
+            volume=900000.0,
         )
     )
     db.commit()
@@ -78,3 +100,20 @@ def test_stock_detail_returns_full_breakdown(client):
 def test_stock_detail_unknown_ticker_returns_404(client):
     response = client.get("/stocks/NOPE.NS")
     assert response.status_code == 404
+
+
+def test_stock_history_returns_prices_ascending(client):
+    response = client.get("/stocks/RELIANCE.NS/history")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 2
+    assert body[0]["trade_date"] == "2026-08-27"
+    assert body[1]["trade_date"] == "2026-08-28"
+    assert body[0]["close"] == 2895.0
+    assert set(body[0].keys()) == {"trade_date", "open", "high", "low", "close", "volume"}
+
+
+def test_stock_history_unknown_ticker_returns_404(client):
+    response = client.get("/stocks/NOPE.NS/history")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "unknown ticker: NOPE.NS"
