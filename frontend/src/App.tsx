@@ -35,18 +35,31 @@ export function App() {
   useEffect(() => {
     if (!selectedTicker) return;
 
+    let cancelled = false;
     setDetail(null);
     setDetailError(null);
     setHistory(null);
     setHistoryError(null);
 
     fetchStockDetail(selectedTicker)
-      .then(setDetail)
-      .catch((err) => setDetailError(err.message));
+      .then((data) => {
+        if (!cancelled) setDetail(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setDetailError(err.message);
+      });
 
     fetchStockHistory(selectedTicker)
-      .then(setHistory)
-      .catch((err) => setHistoryError(err.message));
+      .then((data) => {
+        if (!cancelled) setHistory(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setHistoryError(err.message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedTicker]);
 
   function navButtonClass(active: boolean) {
