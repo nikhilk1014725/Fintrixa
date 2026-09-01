@@ -1,9 +1,10 @@
-"""Fetch a starter universe of NSE large-caps, score them, persist them.
+"""Fetch the live NIFTY 100 universe, score it, persist it.
 
-Supersedes seed_one_ticker.py: seeds enough tickers spanning multiple
-sectors that sector_pe (peer-group average trailing PE, see
-app.ingestion.enrichment.enrich_sector_pe) has at least 2 members per
-sector to average over, instead of the field being permanently null.
+Supersedes the old hardcoded 17-ticker starter list: pulls the current
+NIFTY 100 constituents from NSE (see app.ingestion.nse_universe), uses
+NSE's own Industry classification for sector_pe peer-grouping (see
+app.ingestion.enrichment.enrich_sector_pe) instead of yfinance's sector
+field.
 """
 import time
 from datetime import datetime
@@ -12,6 +13,7 @@ import pandas as pd
 
 from app.db import SessionLocal
 from app.ingestion.enrichment import enrich_sector_pe
+from app.ingestion.nse_universe import fetch_nifty100_constituents
 from app.ingestion.yfinance_client import (
     fetch_fundamentals,
     fetch_price_history,
@@ -23,47 +25,35 @@ from app.scoring.fundamental import compute_fundamental_score
 from app.scoring.technical import compute_technical_score
 from app.scoring.verdict import combine_scores
 
-TICKERS = [
-    "RELIANCE.NS",
-    "TCS.NS",
-    "INFY.NS",
-    "WIPRO.NS",
-    "HDFCBANK.NS",
-    "ICICIBANK.NS",
-    "KOTAKBANK.NS",
-    "SBIN.NS",
-    "ITC.NS",
-    "HINDUNILVR.NS",
-    "MARUTI.NS",
-    "TATAMOTORS.NS",
-    "SUNPHARMA.NS",
-    "DRREDDY.NS",
-    "ASIANPAINT.NS",
-    "BHARTIARTL.NS",
-    "LT.NS",
-]
-
 RATE_LIMIT_DELAY_SECONDS = 0.5
 
 
 def main():
     db = SessionLocal()
 
+    constituents = fetch_nifty100_constituents()
+    print(f"fetched {len(constituents)} NIFTY 100 constituents from NSE")
+
     # Fetch fundamentals for the whole batch first so enrich_sector_pe has
     # the full universe to group/average over before any scoring happens.
     fundamentals_by_ticker = {}
-    for ticker in TICKERS:
-        fundamentals_by_ticker[ticker] = fetch_fundamentals(ticker)
+    for c in constituents:
+        fundamentals_by_ticker[c["ticker"]] = fetch_fundamentals(
+            c["ticker"], sector_hint=c["sector"]
+        )
         time.sleep(RATE_LIMIT_DELAY_SECONDS)
 
     fundamentals_by_ticker = enrich_sector_pe(fundamentals_by_ticker)
 
-    for ticker in TICKERS:
+    for c in constituents:
+        ticker = c["ticker"]
         stock = db.query(Stock).filter_by(ticker=ticker).one_or_none()
         if stock is None:
-            stock = Stock(ticker=ticker, name=ticker.split(".")[0].title())
+            stock = Stock(ticker=ticker, name=c["name"])
             db.add(stock)
             db.flush()
+        elif stock.name != c["name"]:
+            stock.name = c["name"]
 
         history = fetch_price_history(ticker)
         time.sleep(RATE_LIMIT_DELAY_SECONDS)
