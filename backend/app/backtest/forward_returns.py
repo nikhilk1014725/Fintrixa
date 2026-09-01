@@ -21,6 +21,6 @@ def compute_forward_return(
         return None
     start_price = closes.iloc[as_of_pos]
     end_price = closes.iloc[forward_pos]
-    if start_price == 0:
+    if pd.isna(start_price) or pd.isna(end_price) or start_price <= 0:
         return None
     return (end_price - start_price) / start_price
