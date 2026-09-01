@@ -30,14 +30,20 @@ def normalize_price_history(raw: pd.DataFrame) -> list[dict]:
     return rows
 
 
-def fetch_fundamentals(ticker: str) -> dict:
+def fetch_fundamentals(ticker: str, sector_hint: str | None = None) -> dict:
     """Best-effort fundamentals from yfinance .info — incomplete for many
     NSE tickers. screener.in fallback is added in the ingestion-breadth
     plan; this returns whatever yfinance has, with explicit None for the
-    rest so callers never mistake missing for zero."""
+    rest so callers never mistake missing for zero.
+
+    `sector_hint`, when provided (e.g. NSE's own Industry classification
+    from `nse_universe.fetch_nifty100_constituents`), is used instead of
+    yfinance's `sector` field -- more accurate for Indian peer-comparison
+    than yfinance's US-style GICS string. Falls back to yfinance's sector
+    when not provided."""
     info = yf.Ticker(ticker).info
     return {
-        "sector": info.get("sector"),  # GICS-style sector string, used for peer-group sector_pe
+        "sector": sector_hint if sector_hint is not None else info.get("sector"),
         "trailing_pe": info.get("trailingPE"),
         "sector_pe": None,  # filled in by enrich_sector_pe() across the fetched universe
         "return_on_equity": info.get("returnOnEquity"),

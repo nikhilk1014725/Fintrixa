@@ -1,3 +1,5 @@
+from unittest.mock import Mock, patch
+
 import pandas as pd
 import pytest
 from sqlalchemy import create_engine
@@ -6,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db import Base
 from app.ingestion.enrichment import enrich_sector_pe
-from app.ingestion.yfinance_client import normalize_price_history, persist_price_history
+from app.ingestion.yfinance_client import fetch_fundamentals, normalize_price_history, persist_price_history
 from app.models import DailyPrice, Stock
 
 
@@ -147,3 +149,35 @@ def test_persist_price_history_empty_rows_returns_zero(db_session):
     db_session.flush()
 
     assert persist_price_history(db_session, stock.id, []) == 0
+
+
+@patch("app.ingestion.yfinance_client.yf.Ticker")
+def test_fetch_fundamentals_uses_sector_hint_when_provided(mock_ticker_cls):
+    mock_ticker = Mock()
+    mock_ticker.info = {
+        "sector": "Energy",
+        "trailingPE": 20.0,
+        "returnOnEquity": 0.15,
+        "debtToEquity": 0.3,
+    }
+    mock_ticker_cls.return_value = mock_ticker
+
+    result = fetch_fundamentals("RELIANCE.NS", sector_hint="Oil Gas & Consumable Fuels")
+
+    assert result["sector"] == "Oil Gas & Consumable Fuels"
+
+
+@patch("app.ingestion.yfinance_client.yf.Ticker")
+def test_fetch_fundamentals_falls_back_to_yfinance_sector_without_hint(mock_ticker_cls):
+    mock_ticker = Mock()
+    mock_ticker.info = {
+        "sector": "Energy",
+        "trailingPE": 20.0,
+        "returnOnEquity": 0.15,
+        "debtToEquity": 0.3,
+    }
+    mock_ticker_cls.return_value = mock_ticker
+
+    result = fetch_fundamentals("RELIANCE.NS")
+
+    assert result["sector"] == "Energy"
