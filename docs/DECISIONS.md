@@ -3,6 +3,43 @@
 Running log of decisions/constraints an agent (or future you) needs
 before touching this codebase. Newest first.
 
+## 2026-09-02 — First backtest release-gate result: current technical formula FAILS, asymmetrically
+Ran the new `backend/backtest` harness (`scripts/run_backtest.py`) against
+the deepened price history (`scripts/backfill_price_history.py`, `period=
+"max"`, 1991-2026, ~100 NSE stocks, median ~24yr/stock) for both
+backtestable horizons. Results:
+
+- **T+1mo**: 119 usable windows. Top-quartile pass rate **65.5%** (clears
+  the 60% gate). Bottom-quartile pass rate **40.3%** (fails badly).
+  **Overall: FAIL** (both conditions required).
+- **T+3mo**: 118 usable windows. Top-quartile pass rate **69.5%** (clears).
+  Bottom-quartile pass rate **36.4%** (fails). **Overall: FAIL**.
+
+**Why this matters:** the formula being tested is only the RSI + 50/200-DMA
+portion of the Technical Trigger (`backend/app/scoring/technical.py`) —
+volume and MACD (45 of the spec's 100 points) aren't implemented yet. The
+result isn't "no signal" — it's asymmetric: the formula reliably identifies
+stocks that will outperform (top quartile), but has close to no ability to
+flag stocks that will underperform (bottom quartile performs worse than
+chance at being "below median," which is the opposite of what a working
+Avoid signal should do). Long-term/fundamental horizons remain
+**unvalidated by design** — no point-in-time fundamentals source exists
+on free-tier data, so they were never attempted (see
+`docs/superpowers/specs/2026-09-01-backtest-foundation-design.md`).
+
+**How to apply:** per CLAUDE.md's non-negotiable backtest gate, this
+formula does not currently clear release. Any UI or feature that implies
+the current formula reliably flags "Avoid"/downside risk (confidence
+scores, risk narratives, holding-period recommendations derived from the
+combined score) would misrepresent what's actually validated — don't build
+those on top of this formula as-is. Before sub-project C's confidence/
+holding-period/forecast work proceeds, either (a) complete the Technical
+Trigger (volume + MACD) and re-run this backtest, or (b) reweight/redesign
+the existing two components, or (c) explicitly scope any near-term feature
+to only the validated side of the signal (top-quartile "opportunity"
+surfacing) and say so plainly, not silently. This is a product decision,
+not an engineering one — flagged for the operator, not decided here.
+
 ## 2026-08-31 — Frontend dev-server vulnerabilities in esbuild/vite: accepted, not fixed
 `npm audit` flags esbuild <=0.24.2 (moderate/high/critical chain into
 vite/vitest) — the dev server accepts cross-origin requests. **Why not
