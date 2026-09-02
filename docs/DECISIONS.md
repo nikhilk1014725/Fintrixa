@@ -3,6 +3,48 @@
 Running log of decisions/constraints an agent (or future you) needs
 before touching this codebase. Newest first.
 
+## 2026-09-02 — Completing the Technical Trigger (Volume+MACD) did not close the gate — still FAILS
+Implemented the two missing components (Volume 20pts, MACD 25pts — see
+`docs/superpowers/specs/2026-09-02-complete-technical-trigger-design.md`)
+and re-ran the same backtest harness against the same price history. New
+results, compared to the RSI+MA-only baseline immediately below:
+
+- **T+1mo**: 119 usable windows. Top-quartile pass rate **65.5%**
+  (unchanged from baseline). Bottom-quartile pass rate **40.3%**
+  (unchanged from baseline). **Still FAIL.**
+- **T+3mo**: 118 usable windows. Top-quartile pass rate **66.9%** (down
+  from 69.5%). Bottom-quartile pass rate **33.9%** (down from 36.4%).
+  **Still FAIL, and slightly worse than baseline.**
+
+Verified this is a real result, not a bug: confirmed the new formula is
+actually active (spot-checked real stock/date combinations — Volume and
+MACD point buckets vary meaningfully across dates, not stuck at a constant
+or silently falling back to the old behavior).
+
+**Why this matters:** RSI, moving averages, volume-confirmation, and MACD
+are all derived from the same underlying price momentum — for most stocks
+they move together (a stock in a strong uptrend tends to show favorable
+RSI, a golden cross, confirming volume, AND a bullish MACD simultaneously).
+Adding more momentum-flavored components didn't materially change which
+stocks land in the top/bottom quartile, because they weren't adding
+independent information, just correlated confirmation of the same signal.
+The formula's core asymmetry — good at spotting winners, unable to flag
+losers — is not a "missing component" problem; it looks structural.
+
+**How to apply:** per the design spec's own instruction, no further ad hoc
+tweaking in this sitting — that risks overfitting to this specific
+backtest window. This remains a product decision, now with more evidence:
+(a) a genuinely independent signal type is likely needed to catch
+downside (e.g. fundamentals-based red flags via `news_llm`, once built,
+or a mean-reversion/volatility signal uncorrelated with trend-following
+indicators) rather than another trend indicator; (b) accept the asymmetry
+and scope any near-term feature to the validated side only (surfacing
+"opportunity" candidates from the top quartile, explicitly not claiming
+an "Avoid" signal has been backtested); (c) revisit whether quartile
+symmetry is even the right release-gate design for a formula that's
+fundamentally trend-following by construction. Sub-project C's next stage
+stays blocked until one of these is decided.
+
 ## 2026-09-02 — First backtest release-gate result: current technical formula FAILS, asymmetrically
 Ran the new `backend/backtest` harness (`scripts/run_backtest.py`) against
 the deepened price history (`scripts/backfill_price_history.py`, `period=
