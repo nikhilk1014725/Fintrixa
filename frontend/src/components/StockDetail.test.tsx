@@ -17,6 +17,12 @@ const baseDetail: StockDetailData = {
   excluded_reason: null,
   explanation:
     "Long-term: buy on fundamentals (72/100) with technicals at 65/100. Short-term: hold on current momentum.",
+  news_confidence: null,
+  news_bull_case: null,
+  news_bear_case: null,
+  news_red_flags: null,
+  news_researched_at: null,
+  verdict_override_reason: null,
 };
 
 test("renders the explanation text when a score is present", () => {
@@ -91,4 +97,49 @@ test("score breakdown is hidden by default and shown after clicking Show details
   await user.click(screen.getByText("Show details"));
 
   expect(screen.getByText("Score breakdown")).toBeInTheDocument();
+});
+
+test("shows a red-flag warning card when active red flags are present", () => {
+  const withRedFlag: StockDetailData = {
+    ...baseDetail,
+    news_confidence: "Corroborated",
+    news_bull_case: "bull",
+    news_bear_case: "bear",
+    news_red_flags: ["pending litigation over patent dispute"],
+    news_researched_at: "2026-09-02T08:00:00Z",
+    verdict_override_reason: "Active red flag(s) found: pending litigation over patent dispute",
+  };
+
+  render(
+    <StockDetail detail={withRedFlag} detailError={null} history={[]} historyError={null} onBack={vi.fn()} />
+  );
+
+  expect(screen.getByText("⚠ Red flags found")).toBeInTheDocument();
+  expect(screen.getAllByText(/pending litigation over patent dispute/).length).toBeGreaterThan(0);
+});
+
+test("does not show a red-flag card when there are no red flags", () => {
+  render(<StockDetail detail={baseDetail} detailError={null} history={[]} historyError={null} onBack={vi.fn()} />);
+
+  expect(screen.queryByText("⚠ Red flags found")).not.toBeInTheDocument();
+});
+
+test("shows bull/bear case and confidence in Show details when researched", async () => {
+  const user = userEvent.setup();
+  const researched: StockDetailData = {
+    ...baseDetail,
+    news_confidence: "Corroborated",
+    news_bull_case: "Strong order book.",
+    news_bear_case: "Client concentration risk.",
+    news_red_flags: [],
+    news_researched_at: "2026-09-02T08:00:00Z",
+    verdict_override_reason: null,
+  };
+
+  render(<StockDetail detail={researched} detailError={null} history={[]} historyError={null} onBack={vi.fn()} />);
+
+  await user.click(screen.getByText("Show details"));
+
+  expect(screen.getByText("Strong order book.")).toBeInTheDocument();
+  expect(screen.getByText(/Corroborated/)).toBeInTheDocument();
 });

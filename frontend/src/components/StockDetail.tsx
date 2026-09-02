@@ -166,6 +166,24 @@ export function StockDetail({
         </CardContent>
       </Card>
 
+      {detail.news_red_flags && detail.news_red_flags.length > 0 && (
+        <Card className="mb-6 border-signal-avoid/40 bg-signal-avoid/15">
+          <CardHeader>
+            <CardTitle className="text-base text-signal-avoid">⚠ Red flags found</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-ink-900 dark:text-white">
+              {detail.news_red_flags.map((flag, i) => (
+                <li key={i}>{flag}</li>
+              ))}
+            </ul>
+            {detail.verdict_override_reason && (
+              <p className="mt-3 text-xs text-ink-400">{detail.verdict_override_reason}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <button
         type="button"
         onClick={() => setShowDetails((value) => !value)}
@@ -188,6 +206,35 @@ export function StockDetail({
               Long-term verdict weights fundamentals 70% / technicals 30%. Short-term verdict
               weights technicals 70% / fundamentals 30%.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {showDetails && detail.news_researched_at && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">News research</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs uppercase tracking-wide text-ink-400">
+              Confidence: {detail.news_confidence}
+            </p>
+            {detail.news_bull_case && (
+              <div className="mt-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink-400">
+                  Bull case
+                </div>
+                <p className="text-sm text-ink-900 dark:text-white">{detail.news_bull_case}</p>
+              </div>
+            )}
+            {detail.news_bear_case && (
+              <div className="mt-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink-400">
+                  Bear case
+                </div>
+                <p className="text-sm text-ink-900 dark:text-white">{detail.news_bear_case}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

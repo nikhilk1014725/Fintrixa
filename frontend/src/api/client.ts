@@ -13,6 +13,12 @@ export interface StockDetail extends StockSummary {
   fundamental_score: number | null;
   technical_score: number | null;
   explanation: string | null;
+  news_confidence: string | null;
+  news_bull_case: string | null;
+  news_bear_case: string | null;
+  news_red_flags: string[] | null;
+  news_researched_at: string | null;
+  verdict_override_reason: string | null;
 }
 
 export interface PriceHistoryPoint {
