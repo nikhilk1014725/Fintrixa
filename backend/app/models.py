@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, String
+from sqlalchemy import Date, DateTime, Float, ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -15,6 +15,7 @@ class Stock(Base):
 
     daily_prices: Mapped[list["DailyPrice"]] = relationship(back_populates="stock")
     scores: Mapped[list["Score"]] = relationship(back_populates="stock")
+    news_corroborations: Mapped[list["NewsCorroboration"]] = relationship(back_populates="stock")
 
 
 class DailyPrice(Base):
@@ -48,3 +49,18 @@ class Score(Base):
     excluded_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     stock: Mapped["Stock"] = relationship(back_populates="scores")
+
+
+class NewsCorroboration(Base):
+    __tablename__ = "news_corroborations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    computed_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    bull_case: Mapped[str] = mapped_column(Text)
+    bear_case: Mapped[str] = mapped_column(Text)
+    red_flags: Mapped[list] = mapped_column(JSON)
+    confidence: Mapped[str] = mapped_column(String(20))
+    sources: Mapped[list] = mapped_column(JSON)
+
+    stock: Mapped["Stock"] = relationship(back_populates="news_corroborations")
