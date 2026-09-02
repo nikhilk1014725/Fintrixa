@@ -65,3 +65,15 @@ def test_select_shortlist_excludes_unscored_stocks(db_session):
     shortlist = select_shortlist(db_session, top_n=5)
 
     assert [s["ticker"] for s in shortlist] == ["A.NS"]
+
+
+def test_select_shortlist_breaks_ties_deterministically_by_ticker(db_session):
+    _add_scored_stock(db_session, "ZEBRA.NS", 80.0)
+    _add_scored_stock(db_session, "ALPHA.NS", 80.0)
+    _add_scored_stock(db_session, "MIDDLE.NS", 80.0)
+
+    shortlist = select_shortlist(db_session, top_n=2)
+
+    # all three tie on score -- deterministic tiebreak must pick the two
+    # alphabetically-first tickers, not depend on DB row order
+    assert [s["ticker"] for s in shortlist] == ["ALPHA.NS", "MIDDLE.NS"]

@@ -32,5 +32,5 @@ def select_shortlist(db: Session, top_n: int) -> list[dict]:
                 "long_term_score": score.long_term_score,
             }
         )
-    scored.sort(key=lambda s: s["long_term_score"], reverse=True)
+    scored.sort(key=lambda s: (-s["long_term_score"], s["ticker"]))
     return scored[:top_n]
