@@ -73,3 +73,27 @@ def test_validate_and_persist_research_rejects_missing_bull_or_bear_case(db_sess
 
     with pytest.raises(ResearchPayloadError):
         validate_and_persist_research(db_session, payload)
+
+
+def test_validate_and_persist_research_rejects_non_string_red_flag(db_session):
+    stock = Stock(ticker="TCS.NS", name="Tata Consultancy Services")
+    db_session.add(stock)
+    db_session.commit()
+
+    payload = _valid_payload()
+    payload["red_flags"] = [123]
+
+    with pytest.raises(ResearchPayloadError):
+        validate_and_persist_research(db_session, payload)
+
+
+def test_validate_and_persist_research_rejects_source_missing_url(db_session):
+    stock = Stock(ticker="TCS.NS", name="Tata Consultancy Services")
+    db_session.add(stock)
+    db_session.commit()
+
+    payload = _valid_payload()
+    payload["sources"] = [{"title": "Some article"}]
+
+    with pytest.raises(ResearchPayloadError):
+        validate_and_persist_research(db_session, payload)

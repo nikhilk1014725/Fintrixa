@@ -45,10 +45,17 @@ def validate_and_persist_research(db: Session, payload: dict) -> NewsCorroborati
     red_flags = payload.get("red_flags", [])
     if not isinstance(red_flags, list):
         raise ResearchPayloadError("'red_flags' must be a list")
+    if not all(isinstance(flag, str) and flag for flag in red_flags):
+        raise ResearchPayloadError("every 'red_flags' entry must be a non-empty string")
 
     sources = payload.get("sources", [])
     if not isinstance(sources, list):
         raise ResearchPayloadError("'sources' must be a list")
+    if not all(
+        isinstance(s, dict) and s.get("title") and s.get("url")
+        for s in sources
+    ):
+        raise ResearchPayloadError("every 'sources' entry must be a dict with non-empty 'title' and 'url'")
 
     corroboration = NewsCorroboration(
         stock_id=stock.id,
