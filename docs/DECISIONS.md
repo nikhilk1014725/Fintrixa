@@ -3,6 +3,35 @@
 Running log of decisions/constraints an agent (or future you) needs
 before touching this codebase. Newest first.
 
+## 2026-09-02 — Daily news-research routine runs via local launchd, not a Claude Code cloud Routine
+Considered Claude Code's `schedule` skill (cloud Routines, `RemoteTrigger`)
+for the daily news-corroboration task. Confirmed via Anthropic's own blog
+post ("Introducing routines in Claude Code") that Routines "run on Claude
+Code's web infrastructure, so nothing depends on your laptop being open" —
+i.e. an isolated cloud sandbox with no access to this project's local
+Postgres DB (`localhost:5432`). `apply_news_corroboration.py`'s write-back
+step would fail on every scheduled run. **Why not fixed by exposing the
+DB:** this project's CLAUDE.md/DECISIONS.md assume localhost-only; opening
+a personal DB to the internet for this is a real security tradeoff not
+worth taking for a convenience feature.
+
+**Decision:** a macOS `launchd` job (`~/Library/LaunchAgents/com.fintrixa.
+news-research.plist`, not checked into the repo — machine-specific) fires
+`backend/scripts/run_daily_news_research.sh` daily at 08:15 local time.
+That script runs `claude -p "<prompt>"` headlessly (`--allowedTools
+Bash,WebSearch`) — Claude Code's local CLI, not a cloud session — so it
+has direct filesystem/DB access exactly like an interactive session would.
+Logs land in `backend/logs/` (gitignored).
+
+**How to apply:** to inspect/modify the schedule, edit the plist directly
+or `launchctl unload`/`load` it. To change the research prompt, edit
+`run_daily_news_research.sh`, not the plist. The dry run that proved this
+pipeline works end-to-end (5 real stocks researched, 3 genuine red flags
+found — RBI penalty on Muthoot Finance, DXC litigation on TCS, DLF Home
+Developers Supreme Court matter — verdicts correctly capped via the API)
+was done manually before this schedule was set up; the first real
+automated firing should still be checked, not assumed to have worked.
+
 ## 2026-09-02 — Completing the Technical Trigger (Volume+MACD) did not close the gate — still FAILS
 Implemented the two missing components (Volume 20pts, MACD 25pts — see
 `docs/superpowers/specs/2026-09-02-complete-technical-trigger-design.md`)
