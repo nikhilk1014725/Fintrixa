@@ -3,7 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import DailyPrice, Score, Stock
+from app.models import DailyPrice, NewsCorroboration, Score, Stock
+from app.news_llm.override import apply_red_flag_override
 from app.schemas import PriceHistoryPoint, StockDetail, StockSummary
 
 router = APIRouter()
@@ -19,18 +20,30 @@ def _latest_score(db: Session, stock: Stock) -> Score | None:
     return db.execute(stmt).scalar_one_or_none()
 
 
+def _latest_corroboration(db: Session, stock: Stock) -> NewsCorroboration | None:
+    stmt = (
+        select(NewsCorroboration)
+        .where(NewsCorroboration.stock_id == stock.id)
+        .order_by(NewsCorroboration.computed_at.desc())
+        .limit(1)
+    )
+    return db.execute(stmt).scalar_one_or_none()
+
+
 @router.get("/stocks", response_model=list[StockSummary])
 def list_stocks(db: Session = Depends(get_db)):
     stocks = db.execute(select(Stock)).scalars().all()
     results = []
     for stock in stocks:
         score = _latest_score(db, stock)
+        corroboration = _latest_corroboration(db, stock)
+        override = apply_red_flag_override(score, corroboration)
         results.append(
             StockSummary(
                 ticker=stock.ticker,
                 name=stock.name,
-                long_term_label=score.long_term_label if score else None,
-                short_term_label=score.short_term_label if score else None,
+                long_term_label=override["long_term_label"],
+                short_term_label=override["short_term_label"],
                 long_term_score=score.long_term_score if score else None,
                 short_term_score=score.short_term_score if score else None,
                 computed_at=score.computed_at if score else None,
@@ -47,11 +60,14 @@ def stock_detail(ticker: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"unknown ticker: {ticker}")
 
     score = _latest_score(db, stock)
+    corroboration = _latest_corroboration(db, stock)
+    override = apply_red_flag_override(score, corroboration)
+
     return StockDetail(
         ticker=stock.ticker,
         name=stock.name,
-        long_term_label=score.long_term_label if score else None,
-        short_term_label=score.short_term_label if score else None,
+        long_term_label=override["long_term_label"],
+        short_term_label=override["short_term_label"],
         long_term_score=score.long_term_score if score else None,
         short_term_score=score.short_term_score if score else None,
         fundamental_score=score.fundamental_score if score else None,
@@ -59,6 +75,12 @@ def stock_detail(ticker: str, db: Session = Depends(get_db)):
         computed_at=score.computed_at if score else None,
         explanation=score.explanation if score else None,
         excluded_reason=score.excluded_reason if score else "not yet scored",
+        news_confidence=corroboration.confidence if corroboration else None,
+        news_bull_case=corroboration.bull_case if corroboration else None,
+        news_bear_case=corroboration.bear_case if corroboration else None,
+        news_red_flags=corroboration.red_flags if corroboration else None,
+        news_researched_at=corroboration.computed_at if corroboration else None,
+        verdict_override_reason=override["override_reason"],
     )
 
 

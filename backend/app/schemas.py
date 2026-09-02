@@ -20,6 +20,12 @@ class StockDetail(StockSummary):
     fundamental_score: float | None
     technical_score: float | None
     explanation: str | None
+    news_confidence: str | None
+    news_bull_case: str | None
+    news_bear_case: str | None
+    news_red_flags: list[str] | None
+    news_researched_at: datetime | None
+    verdict_override_reason: str | None
 
 
 class PriceHistoryPoint(BaseModel):
