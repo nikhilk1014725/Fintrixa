@@ -22,6 +22,15 @@ def compute_technical_score(closes: pd.Series, volumes: pd.Series) -> dict:
             ),
         }
 
+    if len(volumes) < VOLUME_MA_WINDOW or volumes.iloc[-VOLUME_MA_WINDOW:].isna().any():
+        return {
+            "score": None,
+            "excluded_reason": (
+                f"insufficient or missing volume data: need >= {VOLUME_MA_WINDOW} "
+                f"clean days for the volume moving average"
+            ),
+        }
+
     rsi = RSIIndicator(close=closes, window=14).rsi().iloc[-1]
     sma50 = SMAIndicator(close=closes, window=50).sma_indicator().iloc[-1]
     sma200 = SMAIndicator(close=closes, window=200).sma_indicator().iloc[-1]

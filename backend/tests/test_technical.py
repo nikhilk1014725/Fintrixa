@@ -89,3 +89,27 @@ def test_accelerating_uptrend_scores_higher_than_decelerating_uptrend():
     assert accelerating_result["score"] is not None
     assert decelerating_result["score"] is not None
     assert accelerating_result["score"] > decelerating_result["score"]
+
+
+def test_insufficient_volume_history_excluded_not_zero():
+    closes = _staircase(220, daily_delta=0.3)
+    volumes = pd.Series([1_000_000] * 15)  # shorter than VOLUME_MA_WINDOW=20
+
+    result = compute_technical_score(closes, volumes)
+
+    assert result["score"] is None
+    assert "volume" in result["excluded_reason"].lower()
+
+
+def test_nan_in_recent_volume_excluded_not_silently_scored():
+    import math
+
+    closes = _staircase(220, daily_delta=0.3)
+    volume_values = [1_000_000] * 220
+    volume_values[-3] = math.nan  # NaN within the trailing 20-day window used for the volume MA
+    volumes = pd.Series(volume_values)
+
+    result = compute_technical_score(closes, volumes)
+
+    assert result["score"] is None
+    assert "volume" in result["excluded_reason"].lower()
