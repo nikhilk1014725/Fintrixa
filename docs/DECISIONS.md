@@ -17,11 +17,16 @@ worth taking for a convenience feature.
 
 **Decision:** a macOS `launchd` job (`~/Library/LaunchAgents/com.fintrixa.
 news-research.plist`, not checked into the repo — machine-specific) fires
-`backend/scripts/run_daily_news_research.sh` daily at 08:15 local time.
-That script runs `claude -p "<prompt>"` headlessly (`--allowedTools
-Bash,WebSearch`) — Claude Code's local CLI, not a cloud session — so it
-has direct filesystem/DB access exactly like an interactive session would.
-Logs land in `backend/logs/` (gitignored).
+`backend/scripts/run_daily_news_research.sh` at 08:00 IST on 6 explicit
+dates (Sep 3-8, 2026, per user request — a bounded trial, not an
+open-ended schedule) via 6 `StartCalendarInterval` entries rather than a
+recurring rule; it naturally stops firing after Sep 8 with no extra
+unload logic needed. To extend it, add more date entries and re-`load`
+the plist (`launchctl unload` then `load` picks up edits — a bare re-load
+without unload does not). That script runs `claude -p "<prompt>"`
+headlessly (`--allowedTools Bash,WebSearch`) — Claude Code's local CLI,
+not a cloud session — so it has direct filesystem/DB access exactly like
+an interactive session would. Logs land in `backend/logs/` (gitignored).
 
 **How to apply:** to inspect/modify the schedule, edit the plist directly
 or `launchctl unload`/`load` it. To change the research prompt, edit
