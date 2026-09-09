@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi, beforeEach } from "vitest";
 import { App } from "./App";
 import * as client from "./api/client";
-import type { StockSummary } from "./api/client";
+import type { Holding, StockSummary } from "./api/client";
 
 const stocks: StockSummary[] = [
   {
@@ -137,4 +137,17 @@ test("does not show stale detail data when the ticker changes before the first f
   // The page should show INFY.NS (fresh data), not TCS.NS stale data
   expect(await screen.findByText("Infosys Limited")).toBeInTheDocument();
   expect(screen.queryByText("STALE - Tata Consultancy Services")).not.toBeInTheDocument();
+});
+
+test("switching to Holdings shows the holdings screen", async () => {
+  const user = userEvent.setup();
+  const holdings: Holding[] = [];
+  vi.spyOn(client, "fetchHoldings").mockResolvedValue(holdings);
+
+  render(<App />);
+  await screen.findByText("AI Picks Today");
+
+  await user.click(screen.getByRole("button", { name: "Holdings" }));
+
+  expect(await screen.findByText("My Holdings")).toBeInTheDocument();
 });

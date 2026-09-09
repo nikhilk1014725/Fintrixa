@@ -1,24 +1,29 @@
 import { useEffect, useState } from "react";
 import {
+  fetchHoldings,
   fetchStockDetail,
   fetchStockHistory,
   fetchStocks,
+  type Holding,
   type PriceHistoryPoint,
   type StockDetail as StockDetailData,
   type StockSummary,
 } from "./api/client";
 import { Home } from "./components/Home";
 import { Discover } from "./components/Discover";
+import { Holdings } from "./components/Holdings";
 import { StockDetail } from "./components/StockDetail";
 import { Skeleton } from "./components/ui/skeleton";
 import { Alert } from "./components/ui/alert";
 
-type View = "home" | "discover";
+type View = "home" | "discover" | "holdings";
 
 export function App() {
   const [view, setView] = useState<View>("home");
   const [stocks, setStocks] = useState<StockSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [holdings, setHoldings] = useState<Holding[] | null>(null);
+  const [holdingsError, setHoldingsError] = useState<string | null>(null);
 
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [detail, setDetail] = useState<StockDetailData | null>(null);
@@ -31,6 +36,13 @@ export function App() {
       .then(setStocks)
       .catch((err) => setError(err.message));
   }, []);
+
+  useEffect(() => {
+    if (view !== "holdings" || holdings !== null) return;
+    fetchHoldings()
+      .then(setHoldings)
+      .catch((err) => setHoldingsError(err.message));
+  }, [view, holdings]);
 
   useEffect(() => {
     if (!selectedTicker) return;
@@ -96,6 +108,16 @@ export function App() {
             >
               Discover
             </button>
+            <button
+              type="button"
+              className={navButtonClass(view === "holdings")}
+              onClick={() => {
+                setSelectedTicker(null);
+                setView("holdings");
+              }}
+            >
+              Holdings
+            </button>
           </nav>
         </div>
       </header>
@@ -123,6 +145,17 @@ export function App() {
             )}
             {stocks && view === "discover" && (
               <Discover stocks={stocks} onSelectTicker={setSelectedTicker} />
+            )}
+            {view === "holdings" && (
+              <Holdings
+                stocks={stocks ?? []}
+                holdings={holdings}
+                holdingsError={holdingsError}
+                onHoldingAdded={(holding) =>
+                  setHoldings((prev) => (prev ? [...prev, holding] : [holding]))
+                }
+                onSelectTicker={setSelectedTicker}
+              />
             )}
           </>
         )}
