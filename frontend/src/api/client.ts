@@ -6,13 +6,13 @@ export interface StockSummary {
   long_term_score: number | null;
   short_term_score: number | null;
   computed_at: string | null;
+  explanation: string | null;
   excluded_reason: string | null;
 }
 
 export interface StockDetail extends StockSummary {
   fundamental_score: number | null;
   technical_score: number | null;
-  explanation: string | null;
   news_confidence: string | null;
   news_bull_case: string | null;
   news_bear_case: string | null;

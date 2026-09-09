@@ -11,6 +11,7 @@ const scored: StockSummary = {
   long_term_score: 78.4,
   short_term_score: 55.0,
   computed_at: "2026-08-31T18:00:00Z",
+  explanation: null,
   excluded_reason: null,
 };
 
@@ -22,6 +23,7 @@ const excluded: StockSummary = {
   long_term_score: null,
   short_term_score: null,
   computed_at: null,
+  explanation: null,
   excluded_reason: "missing required fundamental fields: sector_pe, return_on_equity",
 };
 
@@ -54,6 +56,7 @@ test("ranks scored stocks by long-term score, highest first", () => {
     long_term_score: 91.2,
     short_term_score: 70.0,
     computed_at: "2026-09-01T18:00:00Z",
+    explanation: null,
     excluded_reason: null,
   };
 

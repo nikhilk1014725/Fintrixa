@@ -12,6 +12,7 @@ const stock: StockSummary = {
   long_term_score: 78.4,
   short_term_score: 55.0,
   computed_at: "2026-08-31T18:00:00Z",
+  explanation: "Strong business, healthy balance sheet, attractive long-term growth potential.",
   excluded_reason: null,
 };
 
