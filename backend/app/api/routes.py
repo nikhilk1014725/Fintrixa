@@ -1,11 +1,14 @@
+from datetime import date, datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import DailyPrice, NewsCorroboration, Score, Stock
+from app.models import DailyPrice, Holding, NewsCorroboration, Score, Stock
 from app.news_llm.override import apply_red_flag_override
-from app.schemas import PriceHistoryPoint, StockDetail, StockSummary
+from app.schemas import HoldingCreate, HoldingGrading, HoldingResponse, PriceHistoryPoint, StockDetail, StockSummary
+from app.scoring.holdings_grading import grade_holding
 
 router = APIRouter()
 
@@ -97,3 +100,60 @@ def stock_history(ticker: str, db: Session = Depends(get_db)):
         .order_by(DailyPrice.trade_date.asc())
     )
     return db.execute(stmt).scalars().all()
+
+
+def _holding_response(db: Session, holding: Holding) -> HoldingResponse:
+    grading = grade_holding(db, holding)
+    return HoldingResponse(
+        id=holding.id,
+        ticker=holding.stock.ticker,
+        name=holding.stock.name,
+        buy_price=holding.buy_price,
+        quantity=holding.quantity,
+        buy_date=holding.buy_date,
+        grading=HoldingGrading(**grading),
+    )
+
+
+@router.post("/holdings", response_model=HoldingResponse, status_code=201)
+def create_holding(payload: HoldingCreate, db: Session = Depends(get_db)):
+    stock = db.execute(select(Stock).where(Stock.ticker == payload.ticker)).scalar_one_or_none()
+    if stock is None:
+        raise HTTPException(status_code=400, detail=f"we don't track this stock yet: {payload.ticker}")
+
+    if payload.buy_date > date.today():
+        raise HTTPException(status_code=400, detail="buy date can't be in the future")
+
+    earliest_price = db.execute(
+        select(DailyPrice)
+        .where(DailyPrice.stock_id == stock.id)
+        .order_by(DailyPrice.trade_date.asc())
+        .limit(1)
+    ).scalar_one_or_none()
+    if earliest_price is not None and payload.buy_date < earliest_price.trade_date:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"buy date is before the earliest data we have for "
+                f"{payload.ticker} ({earliest_price.trade_date})"
+            ),
+        )
+
+    holding = Holding(
+        stock_id=stock.id,
+        buy_price=payload.buy_price,
+        quantity=payload.quantity,
+        buy_date=payload.buy_date,
+        created_at=datetime.utcnow(),
+    )
+    db.add(holding)
+    db.commit()
+    db.refresh(holding)
+
+    return _holding_response(db, holding)
+
+
+@router.get("/holdings", response_model=list[HoldingResponse])
+def list_holdings(db: Session = Depends(get_db)):
+    holdings = db.execute(select(Holding)).scalars().all()
+    return [_holding_response(db, holding) for holding in holdings]

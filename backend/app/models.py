@@ -16,6 +16,7 @@ class Stock(Base):
     daily_prices: Mapped[list["DailyPrice"]] = relationship(back_populates="stock")
     scores: Mapped[list["Score"]] = relationship(back_populates="stock")
     news_corroborations: Mapped[list["NewsCorroboration"]] = relationship(back_populates="stock")
+    holdings: Mapped[list["Holding"]] = relationship(back_populates="stock")
 
 
 class DailyPrice(Base):
@@ -64,3 +65,16 @@ class NewsCorroboration(Base):
     sources: Mapped[list] = mapped_column(JSON)
 
     stock: Mapped["Stock"] = relationship(back_populates="news_corroborations")
+
+
+class Holding(Base):
+    __tablename__ = "holdings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    buy_price: Mapped[float] = mapped_column(Float)
+    quantity: Mapped[float] = mapped_column(Float)
+    buy_date: Mapped[date] = mapped_column(Date)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+    stock: Mapped["Stock"] = relationship(back_populates="holdings")
