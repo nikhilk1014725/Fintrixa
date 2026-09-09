@@ -1,30 +1,19 @@
 # Fintrixa
 
-A personal stock-buying guide for Indian equities (NSE). Fintrixa scans a
-tracked universe of stocks every day, scores each one on fundamentals and
-technicals, and surfaces a plain-English verdict — backed by a backtested
-formula and LLM-corroborated news — so a single user can decide what's
-worth researching further.
+A personal stock-buying guide for Indian equities (NSE). Fintrixa scans a tracked universe of stocks every day, scores each one on fundamentals and technicals, and surfaces a plain-English verdict — backed by a backtested formula and LLM-corroborated news — so a single user can decide what's worth researching further.
 
-This is a solo-user, free-tier-only project: no paid data vendor, no paid
-LLM subscription, one Postgres database, one FastAPI app.
+This is a solo-user, free-tier-only project: no paid data vendor, no paid LLM subscription, one Postgres database, one FastAPI app.
 
 ## Tech stack
 
-- **Backend:** Python, FastAPI, PostgreSQL, SQLAlchemy + Alembic, a
-  scheduled job (via a local `launchd` job, not an in-process scheduler).
-- **Data:** [yfinance](https://pypi.org/project/yfinance/) (`TICKER.NS` /
-  `.BO`), NSE's public archive for the tracked universe, screener.in as a
-  planned (not yet built) fallback for fields yfinance doesn't expose.
-- **Frontend:** React + TypeScript + Vite, Tailwind CSS v4, a small
-  lavender/white/black design system.
+- **Backend:** Python, FastAPI, PostgreSQL, SQLAlchemy + Alembic, a scheduled job (via a local `launchd` job, not an in-process scheduler).
+- **Data:** [yfinance](https://pypi.org/project/yfinance/) (`TICKER.NS` / `.BO`), NSE's public archive for the tracked universe, screener.in as a planned (not yet built) fallback for fields yfinance doesn't expose.
+- **Frontend:** React + TypeScript + Vite, Tailwind CSS v4, a small lavender/white/black design system.
 - **Tests:** pytest (backend), vitest + React Testing Library (frontend).
 
 ## Module boundaries (modular monolith)
 
-One FastAPI app, one Postgres database, code split into modules that talk
-to each other through typed interfaces — not a microservice split, just
-clean internal boundaries:
+One FastAPI app, one Postgres database, code split into modules that talk to each other through typed interfaces — not a microservice split, just clean internal boundaries:
 
 ```
 backend/app/ingestion   — pulls the tracked universe + raw market/fundamental data
@@ -36,6 +25,30 @@ frontend/               — React dashboard (Home, Discover, Holdings, stock det
 ```
 
 ## How a stock gets identified and scored — the full flow
+
+```mermaid
+flowchart TD
+    A["1. Universe selection\nNSE NIFTY 100 CSV (live fetch)"] --> B["2. Raw data fetch\nyfinance fundamentals + OHLCV price history"]
+    B --> C["3. Fundamental score (0-100)\nvaluation, profitability, leverage, red flags"]
+    B --> D["4. Technical score (0-100)\nRSI, moving averages, volume, MACD"]
+    C --> E["5. Combined verdict\nlong-term = 70% fundamental + 30% technical\nshort-term = 70% technical + 30% fundamental"]
+    D --> E
+    E --> F{"Active red flag\nin news research?"}
+    F -- yes --> G["6. Red-flag override\nStrong Buy/Buy capped to Hold"]
+    F -- no --> H["Verdict shown as-is"]
+    E -.-> I["7. LLM news corroboration\ntop-N shortlist only, cost-controlled"]
+    I -.-> F
+    G --> J["9. API\nGET /stocks, /stocks/ticker, /stocks/ticker/history"]
+    H --> J
+    J --> K["10. Frontend\nHome / Discover / Stock detail / My Holdings"]
+
+    L["8. Backtest release gate"] -. must pass before any formula change ships .-> C
+    L -. must pass before any formula change ships .-> D
+```
+
+*Dotted lines mark gates and side inputs rather than the direct per-stock
+data path: the backtest gate guards changes to the scoring code itself,
+and news corroboration only ever runs on the shortlist, not every stock.*
 
 ### 1. Universe selection (`backend/app/ingestion/nse_universe.py`)
 
