@@ -47,6 +47,7 @@ def list_stocks(db: Session = Depends(get_db)):
                 long_term_score=score.long_term_score if score else None,
                 short_term_score=score.short_term_score if score else None,
                 computed_at=score.computed_at if score else None,
+                explanation=score.explanation if score else None,
                 excluded_reason=score.excluded_reason if score else "not yet scored",
             )
         )

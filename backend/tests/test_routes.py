@@ -97,6 +97,17 @@ def test_stock_detail_returns_full_breakdown(client):
     assert body["technical_score"] == 70.0
 
 
+def test_list_stocks_includes_explanation_matching_detail_endpoint(client):
+    list_response = client.get("/stocks")
+    detail_response = client.get("/stocks/RELIANCE.NS")
+    assert list_response.status_code == 200
+    assert detail_response.status_code == 200
+    list_body = list_response.json()
+    detail_body = detail_response.json()
+    assert list_body[0]["explanation"] == "Long-term: buy on fundamentals (82/100)..."
+    assert list_body[0]["explanation"] == detail_body["explanation"]
+
+
 def test_stock_detail_unknown_ticker_returns_404(client):
     response = client.get("/stocks/NOPE.NS")
     assert response.status_code == 404
