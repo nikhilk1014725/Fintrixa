@@ -12,6 +12,7 @@ const stocks: StockSummary[] = [
     long_term_score: null,
     short_term_score: null,
     computed_at: null,
+    explanation: null,
     excluded_reason: "missing required fundamental fields: sector_pe, return_on_equity",
   },
 ];

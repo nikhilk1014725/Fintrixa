@@ -13,13 +13,13 @@ class StockSummary(BaseModel):
     long_term_score: float | None
     short_term_score: float | None
     computed_at: datetime | None
+    explanation: str | None
     excluded_reason: str | None
 
 
 class StockDetail(StockSummary):
     fundamental_score: float | None
     technical_score: float | None
-    explanation: str | None
     news_confidence: str | None
     news_bull_case: str | None
     news_bear_case: str | None
