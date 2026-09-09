@@ -37,3 +37,29 @@ class PriceHistoryPoint(BaseModel):
     low: float
     close: float
     volume: float
+
+
+class HoldingCreate(BaseModel):
+    ticker: str
+    buy_price: float
+    quantity: float
+    buy_date: date
+
+
+class HoldingGrading(BaseModel):
+    verdict_in_effect: str | None
+    tracking_status: str
+    current_price: float | None
+    price_as_of_date: date | None
+    gain_loss_pct: float | None
+    gain_loss_abs: float | None
+
+
+class HoldingResponse(BaseModel):
+    id: int
+    ticker: str
+    name: str
+    buy_price: float
+    quantity: float
+    buy_date: date
+    grading: HoldingGrading
