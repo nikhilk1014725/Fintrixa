@@ -55,3 +55,54 @@ export async function fetchStockHistory(ticker: string): Promise<PriceHistoryPoi
   }
   return response.json();
 }
+
+export interface HoldingGrading {
+  verdict_in_effect: string | null;
+  tracking_status:
+    | "tracking_as_expected"
+    | "not_tracking_as_expected"
+    | "no_bullish_call"
+    | "no_call_on_record";
+  current_price: number | null;
+  price_as_of_date: string | null;
+  gain_loss_pct: number | null;
+  gain_loss_abs: number | null;
+}
+
+export interface Holding {
+  id: number;
+  ticker: string;
+  name: string;
+  buy_price: number;
+  quantity: number;
+  buy_date: string;
+  grading: HoldingGrading;
+}
+
+export interface HoldingCreateInput {
+  ticker: string;
+  buy_price: number;
+  quantity: number;
+  buy_date: string;
+}
+
+export async function fetchHoldings(): Promise<Holding[]> {
+  const response = await fetch(`${API_BASE}/holdings`);
+  if (!response.ok) {
+    throw new Error(`failed to fetch holdings: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function createHolding(input: HoldingCreateInput): Promise<Holding> {
+  const response = await fetch(`${API_BASE}/holdings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.detail ?? `failed to create holding: ${response.status}`);
+  }
+  return response.json();
+}
