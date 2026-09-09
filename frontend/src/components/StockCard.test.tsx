@@ -44,3 +44,22 @@ test("calls onSelect with the ticker when clicked", async () => {
   await user.click(screen.getByText("TCS.NS"));
   expect(onSelect).toHaveBeenCalledWith("TCS.NS");
 });
+
+test("renders the explanation sentence when present", () => {
+  render(<StockCard stock={stock} onSelect={vi.fn()} />);
+  expect(
+    screen.getByText(
+      "Strong business, healthy balance sheet, attractive long-term growth potential."
+    )
+  ).toBeInTheDocument();
+});
+
+test("renders nothing extra when explanation is null", () => {
+  const noExplanation: StockSummary = { ...stock, explanation: null };
+  render(<StockCard stock={noExplanation} onSelect={vi.fn()} />);
+  expect(
+    screen.queryByText(
+      "Strong business, healthy balance sheet, attractive long-term growth potential."
+    )
+  ).not.toBeInTheDocument();
+});

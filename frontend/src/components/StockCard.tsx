@@ -58,6 +58,10 @@ export function StockCard({
       ) : (
         <p className="mt-4 text-xs text-ink-400">{stock.excluded_reason}</p>
       )}
+
+      {stock.explanation && (
+        <p className="mt-3 text-xs text-ink-500 dark:text-ink-300">{stock.explanation}</p>
+      )}
     </Card>
   );
 }
