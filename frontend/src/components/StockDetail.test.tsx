@@ -143,3 +143,35 @@ test("shows bull/bear case and confidence in Show details when researched", asyn
   expect(screen.getByText("Strong order book.")).toBeInTheDocument();
   expect(screen.getByText(/Corroborated/)).toBeInTheDocument();
 });
+
+test("shows the most recent close price and date in the header when history has data", () => {
+  render(
+    <StockDetail
+      detail={baseDetail}
+      detailError={null}
+      history={[
+        { trade_date: "2026-08-29", open: 1800, high: 1810, low: 1790, close: 1805, volume: 100000 },
+        { trade_date: "2026-08-30", open: 1805, high: 1850, low: 1800, close: 1842, volume: 120000 },
+      ]}
+      historyError={null}
+      onBack={vi.fn()}
+    />
+  );
+
+  expect(screen.getByText(/₹1,842\.00/)).toBeInTheDocument();
+  expect(screen.getByText(/as of 30 Aug/)).toBeInTheDocument();
+});
+
+test("shows no price line in the header when history is empty", () => {
+  render(
+    <StockDetail
+      detail={baseDetail}
+      detailError={null}
+      history={[]}
+      historyError={null}
+      onBack={vi.fn()}
+    />
+  );
+
+  expect(screen.queryByText(/as of/)).not.toBeInTheDocument();
+});

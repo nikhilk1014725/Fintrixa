@@ -132,6 +132,12 @@ export function StockDetail({
             {detail.name}
           </h2>
           <p className="font-mono text-sm text-ink-400">{detail.ticker}</p>
+          {history && history.length > 0 && (
+            <p className="mt-1 text-sm text-ink-600 dark:text-lavender-200">
+              ₹{Number(history[history.length - 1].close).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · as of{" "}
+              {formatDate(history[history.length - 1].trade_date)}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {detail.long_term_label && (
