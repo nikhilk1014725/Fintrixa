@@ -99,7 +99,7 @@ test("score breakdown is hidden by default and shown after clicking Show details
   expect(screen.getByText("Score breakdown")).toBeInTheDocument();
 });
 
-test("shows a red-flag warning card when active red flags are present", () => {
+test("shows red flags in the merged risk section when active red flags are present", () => {
   const withRedFlag: StockDetailData = {
     ...baseDetail,
     news_confidence: "Corroborated",
@@ -114,17 +114,38 @@ test("shows a red-flag warning card when active red flags are present", () => {
     <StockDetail detail={withRedFlag} detailError={null} history={[]} historyError={null} onBack={vi.fn()} />
   );
 
-  expect(screen.getByText("⚠ Red flags found")).toBeInTheDocument();
+  expect(screen.getByText("⚠ What could go wrong")).toBeInTheDocument();
   expect(screen.getAllByText(/pending litigation over patent dispute/).length).toBeGreaterThan(0);
 });
 
-test("does not show a red-flag card when there are no red flags", () => {
+test("does not show the risk section when there are no red flags and no bear case", () => {
   render(<StockDetail detail={baseDetail} detailError={null} history={[]} historyError={null} onBack={vi.fn()} />);
 
-  expect(screen.queryByText("⚠ Red flags found")).not.toBeInTheDocument();
+  expect(screen.queryByText("What could go wrong")).not.toBeInTheDocument();
+  expect(screen.queryByText("⚠ What could go wrong")).not.toBeInTheDocument();
 });
 
-test("shows bull/bear case and confidence in Show details when researched", async () => {
+test("shows the bull case in What could happen and the bear case in What could go wrong without opening Show details", () => {
+  const researched: StockDetailData = {
+    ...baseDetail,
+    news_confidence: "Corroborated",
+    news_bull_case: "Strong order book.",
+    news_bear_case: "Client concentration risk.",
+    news_red_flags: [],
+    news_researched_at: "2026-09-02T08:00:00Z",
+    verdict_override_reason: null,
+  };
+
+  render(<StockDetail detail={researched} detailError={null} history={[]} historyError={null} onBack={vi.fn()} />);
+
+  expect(screen.getByText("What could happen")).toBeInTheDocument();
+  expect(screen.getByText("Strong order book.")).toBeInTheDocument();
+  expect(screen.getByText("What could go wrong")).toBeInTheDocument();
+  expect(screen.getByText("Client concentration risk.")).toBeInTheDocument();
+  expect(screen.queryByText(/Corroborated/)).not.toBeInTheDocument();
+});
+
+test("shows confidence only after opening Show details", async () => {
   const user = userEvent.setup();
   const researched: StockDetailData = {
     ...baseDetail,
@@ -140,7 +161,6 @@ test("shows bull/bear case and confidence in Show details when researched", asyn
 
   await user.click(screen.getByText("Show details"));
 
-  expect(screen.getByText("Strong order book.")).toBeInTheDocument();
   expect(screen.getByText(/Corroborated/)).toBeInTheDocument();
 });
 
@@ -174,4 +194,22 @@ test("shows no price line in the header when history is empty", () => {
   );
 
   expect(screen.queryByText(/as of/)).not.toBeInTheDocument();
+});
+
+test("shows the bear case with a neutral (non-warning) title when there are no red flags", () => {
+  const bearOnly: StockDetailData = {
+    ...baseDetail,
+    news_confidence: "Mixed",
+    news_bull_case: null,
+    news_bear_case: "Client concentration risk.",
+    news_red_flags: [],
+    news_researched_at: "2026-09-02T08:00:00Z",
+    verdict_override_reason: null,
+  };
+
+  render(<StockDetail detail={bearOnly} detailError={null} history={[]} historyError={null} onBack={vi.fn()} />);
+
+  expect(screen.getByText("What could go wrong")).toBeInTheDocument();
+  expect(screen.queryByText("⚠ What could go wrong")).not.toBeInTheDocument();
+  expect(screen.getByText("Client concentration risk.")).toBeInTheDocument();
 });
