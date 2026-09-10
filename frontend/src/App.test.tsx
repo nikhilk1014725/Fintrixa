@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi, beforeEach } from "vitest";
 import { App } from "./App";
 import * as client from "./api/client";
-import type { Holding, StockSummary } from "./api/client";
+import type { Holding, NewsDigestEntry, StockSummary } from "./api/client";
 
 const stocks: StockSummary[] = [
   {
@@ -150,4 +150,17 @@ test("switching to Holdings shows the holdings screen", async () => {
   await user.click(screen.getByRole("button", { name: "Holdings" }));
 
   expect(await screen.findByText("My Holdings")).toBeInTheDocument();
+});
+
+test("switching to Research shows the research digest screen", async () => {
+  const user = userEvent.setup();
+  const entries: NewsDigestEntry[] = [];
+  vi.spyOn(client, "fetchNewsDigest").mockResolvedValue(entries);
+
+  render(<App />);
+  await screen.findByText("AI Picks Today");
+
+  await user.click(screen.getByRole("button", { name: "Research" }));
+
+  expect(await screen.findByText("Research Digest")).toBeInTheDocument();
 });

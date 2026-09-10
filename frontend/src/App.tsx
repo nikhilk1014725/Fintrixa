@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   fetchHoldings,
+  fetchNewsDigest,
   fetchStockDetail,
   fetchStockHistory,
   fetchStocks,
   type Holding,
+  type NewsDigestEntry,
   type PriceHistoryPoint,
   type StockDetail as StockDetailData,
   type StockSummary,
@@ -12,11 +14,12 @@ import {
 import { Home } from "./components/Home";
 import { Discover } from "./components/Discover";
 import { Holdings } from "./components/Holdings";
+import { ResearchDigest } from "./components/ResearchDigest";
 import { StockDetail } from "./components/StockDetail";
 import { Skeleton } from "./components/ui/skeleton";
 import { Alert } from "./components/ui/alert";
 
-type View = "home" | "discover" | "holdings";
+type View = "home" | "discover" | "holdings" | "research";
 
 export function App() {
   const [view, setView] = useState<View>("home");
@@ -24,6 +27,8 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [holdings, setHoldings] = useState<Holding[] | null>(null);
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
+  const [newsDigest, setNewsDigest] = useState<NewsDigestEntry[] | null>(null);
+  const [newsDigestError, setNewsDigestError] = useState<string | null>(null);
 
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [detail, setDetail] = useState<StockDetailData | null>(null);
@@ -43,6 +48,13 @@ export function App() {
       .then(setHoldings)
       .catch((err) => setHoldingsError(err.message));
   }, [view, holdings]);
+
+  useEffect(() => {
+    if (view !== "research" || newsDigest !== null) return;
+    fetchNewsDigest()
+      .then(setNewsDigest)
+      .catch((err) => setNewsDigestError(err.message));
+  }, [view, newsDigest]);
 
   useEffect(() => {
     if (!selectedTicker) return;
@@ -118,6 +130,16 @@ export function App() {
             >
               Holdings
             </button>
+            <button
+              type="button"
+              className={navButtonClass(view === "research")}
+              onClick={() => {
+                setSelectedTicker(null);
+                setView("research");
+              }}
+            >
+              Research
+            </button>
           </nav>
         </div>
       </header>
@@ -154,6 +176,13 @@ export function App() {
                 onHoldingAdded={(holding) =>
                   setHoldings((prev) => (prev ? [...prev, holding] : [holding]))
                 }
+                onSelectTicker={setSelectedTicker}
+              />
+            )}
+            {view === "research" && (
+              <ResearchDigest
+                entries={newsDigest}
+                error={newsDigestError}
                 onSelectTicker={setSelectedTicker}
               />
             )}
