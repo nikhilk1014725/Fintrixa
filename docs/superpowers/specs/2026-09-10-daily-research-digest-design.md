@@ -76,10 +76,19 @@ top-nav pattern already established for those three (`App.tsx`'s
 - A `<select>` dropdown lists only dates that actually have data (derived
   from the fetched rows — never a hardcoded or guessed date), most recent
   first. Changing it re-renders the list for that date, no new fetch.
-- Each row: ticker, name, confidence badge (reusing the existing
-  Corroborated/Mixed/Unconfirmed badge treatment), and a red-flag count
-  badge ("2 red flags") shown only when `red_flag_count > 0` — nothing
-  shown when there are no flags (not a "0 red flags" badge).
+- Each row: ticker, name, a confidence badge, and a red-flag count badge
+  ("2 red flags") shown only when `red_flag_count > 0` — nothing shown
+  when there are no flags (not a "0 red flags" badge). **Correction from
+  an earlier draft of this spec:** confidence is currently shown as plain
+  text on the stock detail page (`StockDetail.tsx:220`, `Confidence:
+  {value}`), not an existing badge component — there is nothing to reuse.
+  This adds a new confidence badge using the existing `Badge` UI
+  primitive (`frontend/src/components/ui/badge.tsx`) with its `neutral`
+  variant for all three confidence values (Corroborated/Mixed/
+  Unconfirmed) — per the design system, signal colors (green/red) are
+  reserved for Buy/Hold/Avoid verdicts specifically, not repurposed for
+  a different concept like research confidence, so this stays neutral
+  rather than inventing a new color meaning.
 - Tapping a row calls `onSelectTicker`, reusing the same navigation wiring
   already used by `Home`, `Discover`, and `Holdings` to open the stock
   detail page — no new navigation concept.
