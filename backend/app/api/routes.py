@@ -7,7 +7,15 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import DailyPrice, Holding, NewsCorroboration, Score, Stock
 from app.news_llm.override import apply_red_flag_override
-from app.schemas import HoldingCreate, HoldingGrading, HoldingResponse, PriceHistoryPoint, StockDetail, StockSummary
+from app.schemas import (
+    HoldingCreate,
+    HoldingGrading,
+    HoldingResponse,
+    NewsDigestEntry,
+    PriceHistoryPoint,
+    StockDetail,
+    StockSummary,
+)
 from app.scoring.holdings_grading import grade_holding
 
 router = APIRouter()
@@ -157,3 +165,23 @@ def create_holding(payload: HoldingCreate, db: Session = Depends(get_db)):
 def list_holdings(db: Session = Depends(get_db)):
     holdings = db.execute(select(Holding)).scalars().all()
     return [_holding_response(db, holding) for holding in holdings]
+
+
+@router.get("/news-digest", response_model=list[NewsDigestEntry])
+def news_digest(db: Session = Depends(get_db)):
+    stmt = (
+        select(NewsCorroboration, Stock.ticker, Stock.name)
+        .join(Stock, NewsCorroboration.stock_id == Stock.id)
+        .order_by(NewsCorroboration.computed_at.desc())
+    )
+    rows = db.execute(stmt).all()
+    return [
+        NewsDigestEntry(
+            ticker=ticker,
+            name=name,
+            computed_at=corroboration.computed_at,
+            confidence=corroboration.confidence,
+            red_flag_count=len(corroboration.red_flags),
+        )
+        for corroboration, ticker, name in rows
+    ]

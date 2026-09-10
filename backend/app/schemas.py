@@ -63,3 +63,13 @@ class HoldingResponse(BaseModel):
     quantity: float
     buy_date: date
     grading: HoldingGrading
+
+
+class NewsDigestEntry(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    ticker: str
+    name: str
+    computed_at: datetime
+    confidence: str
+    red_flag_count: int
