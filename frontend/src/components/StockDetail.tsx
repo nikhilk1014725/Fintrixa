@@ -132,6 +132,12 @@ export function StockDetail({
             {detail.name}
           </h2>
           <p className="font-mono text-sm text-ink-400">{detail.ticker}</p>
+          {history && history.length > 0 && (
+            <p className="mt-1 text-sm text-ink-600 dark:text-lavender-200">
+              ₹{Number(history[history.length - 1].close).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · as of{" "}
+              {formatDate(history[history.length - 1].trade_date)}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {detail.long_term_label && (
@@ -151,7 +157,7 @@ export function StockDetail({
 
       <Card className="mb-6 border-lavender-300/60 bg-lavender-50 dark:border-lavender-500/30 dark:bg-lavender-900/20">
         <CardHeader>
-          <CardTitle className="text-base">Suggested action</CardTitle>
+          <CardTitle className="text-base">In Simple Words</CardTitle>
         </CardHeader>
         <CardContent>
           {hasScore && detail.explanation ? (
@@ -166,23 +172,55 @@ export function StockDetail({
         </CardContent>
       </Card>
 
-      {detail.news_red_flags && detail.news_red_flags.length > 0 && (
-        <Card className="mb-6 border-signal-avoid/40 bg-signal-avoid/15">
+      {detail.news_bull_case && (
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base text-signal-avoid">⚠ Red flags found</CardTitle>
+            <CardTitle className="text-base">What could happen</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc space-y-1 pl-5 text-sm text-ink-900 dark:text-white">
-              {detail.news_red_flags.map((flag, i) => (
-                <li key={i}>{flag}</li>
-              ))}
-            </ul>
-            {detail.verdict_override_reason && (
-              <p className="mt-3 text-xs text-ink-400">{detail.verdict_override_reason}</p>
-            )}
+            <p className="text-sm text-ink-900 dark:text-white">{detail.news_bull_case}</p>
           </CardContent>
         </Card>
       )}
+
+      {(() => {
+        const hasRedFlags = Boolean(detail.news_red_flags && detail.news_red_flags.length > 0);
+        const hasBearCase = Boolean(detail.news_bear_case);
+        if (!hasRedFlags && !hasBearCase) return null;
+
+        return (
+          <Card
+            className={
+              hasRedFlags
+                ? "mb-6 border-signal-avoid/40 bg-signal-avoid/15"
+                : "mb-6"
+            }
+          >
+            <CardHeader>
+              <CardTitle className={hasRedFlags ? "text-base text-signal-avoid" : "text-base"}>
+                {hasRedFlags ? "⚠ What could go wrong" : "What could go wrong"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasRedFlags && (
+                <ul className="list-disc space-y-1 pl-5 text-sm text-ink-900 dark:text-white">
+                  {detail.news_red_flags!.map((flag, i) => (
+                    <li key={i}>{flag}</li>
+                  ))}
+                </ul>
+              )}
+              {hasBearCase && (
+                <p className={hasRedFlags ? "mt-3 text-sm text-ink-900 dark:text-white" : "text-sm text-ink-900 dark:text-white"}>
+                  {detail.news_bear_case}
+                </p>
+              )}
+              {detail.verdict_override_reason && (
+                <p className="mt-3 text-xs text-ink-400">{detail.verdict_override_reason}</p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <button
         type="button"
@@ -219,22 +257,6 @@ export function StockDetail({
             <p className="text-xs uppercase tracking-wide text-ink-400">
               Confidence: {detail.news_confidence}
             </p>
-            {detail.news_bull_case && (
-              <div className="mt-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink-400">
-                  Bull case
-                </div>
-                <p className="text-sm text-ink-900 dark:text-white">{detail.news_bull_case}</p>
-              </div>
-            )}
-            {detail.news_bear_case && (
-              <div className="mt-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink-400">
-                  Bear case
-                </div>
-                <p className="text-sm text-ink-900 dark:text-white">{detail.news_bear_case}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       )}
