@@ -106,3 +106,19 @@ export async function createHolding(input: HoldingCreateInput): Promise<Holding>
   }
   return response.json();
 }
+
+export interface NewsDigestEntry {
+  ticker: string;
+  name: string;
+  computed_at: string;
+  confidence: string;
+  red_flag_count: number;
+}
+
+export async function fetchNewsDigest(): Promise<NewsDigestEntry[]> {
+  const response = await fetch(`${API_BASE}/news-digest`);
+  if (!response.ok) {
+    throw new Error(`failed to fetch news digest: ${response.status}`);
+  }
+  return response.json();
+}
