@@ -3,6 +3,34 @@
 Running log of decisions/constraints an agent (or future you) needs
 before touching this codebase. Newest first.
 
+## 2026-09-09 — News-research schedule extended to Sep 10-15 at 12:00 IST; shortlist widened to top-15
+The original 6-day trial (Sep 3-8, 08:00 IST, see the 2026-09-02 entry
+below) ended with no follow-up decision recorded, so the job had gone
+quiet with no error — nothing was actually broken, but nobody would have
+noticed either way. Live `~/Library/LaunchAgents/com.fintrixa.
+news-research.plist` was found to already be firing at **12:00 IST**, not
+08:00 as documented below — the plist was edited directly at some point
+without a matching DECISIONS.md update. Confirmed with the user that
+12:00 IST is the intended time going forward (not a bug to fix back to
+08:00); this entry corrects the record rather than the schedule. The
+plist's `StartCalendarInterval` entries now cover Sep 10-15, 2026 — still
+a bounded trial, same "add more dates and reload" pattern as before, not
+an open-ended recurring rule.
+
+Separately, `get_shortlist.py`'s `TOP_N` was raised from 5 to 15 (see
+`select_shortlist()` in `backend/app/news_llm/shortlist.py` — ranks by
+each stock's latest `long_term_score`, unscored stocks excluded). Runtime
+per run is expected to roughly triple since each additional stock adds
+its own WebSearch research calls; nothing in the script enforces a
+timeout, so the first 15-stock run should be checked directly (log file
+present and complete), not assumed to have worked just because nothing
+errored.
+
+**How to apply:** if the plist and this doc ever disagree again, treat
+the live plist as ground truth and fix the doc, not the other way around
+— re-check `launchctl list | grep fintrixa` and the plist's actual
+`StartCalendarInterval` before trusting this log's stated schedule.
+
 ## 2026-09-02 — Daily news-research routine runs via local launchd, not a Claude Code cloud Routine
 Considered Claude Code's `schedule` skill (cloud Routines, `RemoteTrigger`)
 for the daily news-corroboration task. Confirmed via Anthropic's own blog

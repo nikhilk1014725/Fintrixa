@@ -7,7 +7,7 @@ import sys
 from app.db import SessionLocal
 from app.news_llm.shortlist import select_shortlist
 
-TOP_N = 5
+TOP_N = 15
 
 
 def main():
